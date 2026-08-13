@@ -1,0 +1,14 @@
+{
+    "fonts": [
+        {
+            "family": "The Serif Hand Black",
+            "file": "fonts/TheSerifHand-Black.woff2",
+            "weight": "normal"
+        },
+        {
+            "family": "The Serif Hand Extrablack",
+            "file": "fonts/TheSerifHand-Extrablack.woff2",
+            "weight": "900"
+        }
+    ]
+}

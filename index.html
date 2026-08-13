@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poster Customizer - Hoss Hangmen</title>
+    <link rel="stylesheet" href="fonts/fonts.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/fabric@6.5.1/dist/index.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div id="toolbar" class="toolbar">
+            <div class="toolbar-section toolbar-section--templates">
+                <label class="toolbar-label">Template</label>
+                <div id="template-selector" class="template-selector"></div>
+            </div>
+            <div class="toolbar-section toolbar-section--text">
+                <label class="toolbar-label">Text</label>
+                <button id="btn-add-text" class="toolbar-btn" title="Add Text">+ Text</button>
+                <input type="number" id="font-size" class="toolbar-input" min="8" max="200" step="1" value="16" title="Font Size (pt)">
+                <select id="font-family" class="toolbar-select" title="Typeface"></select>
+                <input type="color" id="font-color" class="toolbar-color" value="#FFFFFF" title="Font Color">
+                <input type="text" id="font-color-hex" class="toolbar-input toolbar-input--hex" placeholder="#FFFFFF" title="Hex Color Code">
+            </div>
+            <div class="toolbar-section toolbar-section--actions">
+                <button id="btn-undo" class="toolbar-btn" title="Undo (Ctrl+Z)" disabled>Undo</button>
+                <button id="btn-redo" class="toolbar-btn" title="Redo (Ctrl+Y)" disabled>Redo</button>
+                <button id="btn-export" class="toolbar-btn toolbar-btn--primary" title="Export as PNG">Export</button>
+                <button id="btn-reset" class="toolbar-btn toolbar-btn--danger" title="Reset to Default">Reset</button>
+            </div>
+        </div>
+        <div id="canvas-container" class="canvas-container">
+            <canvas id="poster-canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modal-message">
+        <div class="modal-content">
+            <p id="modal-message" class="modal-message"></p>
+            <div class="modal-actions">
+                <button id="modal-confirm" class="toolbar-btn toolbar-btn--primary">OK</button>
+                <button id="modal-cancel" class="toolbar-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Modules -->
+    <script src="notifications.js"></script>
+    <script src="templateManager.js"></script>
+    <script src="historyManager.js"></script>
+    <script src="persistenceManager.js"></script>
+    <script src="exportManager.js"></script>
+    <script src="toolbar.js"></script>
+    <script src="responsiveManager.js"></script>
+    <script src="editor.js"></script>
+</body>
+</html>
