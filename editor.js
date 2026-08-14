@@ -140,6 +140,10 @@ const Editor = {
         // Constrain element positioning to canvas boundaries
         this.canvas.on('object:moving', (event) => {
             const obj = event.target;
+
+            // Skip background layer — it must remain fixed at (0,0)
+            if (obj.isBackgroundLayer === true) return;
+
             const boundingRect = obj.getBoundingRect();
             const canvasWidth = this.canvas.width;
             const canvasHeight = this.canvas.height;
@@ -199,6 +203,9 @@ const Editor = {
     onObjectScaling(event) {
         const obj = event.target;
         if (!obj || !this.canvas) return;
+
+        // Skip background layer — it must remain at scale 1×1
+        if (obj.isBackgroundLayer === true) return;
 
         const canvasWidth = this.canvas.getWidth();
         const canvasHeight = this.canvas.getHeight();

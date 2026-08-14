@@ -59,9 +59,23 @@ const TemplateManager = {
             throw err;
         }
 
-        // Clear existing objects and set background
+        // Clear existing objects and add background as a regular object
         canvas.clear();
-        canvas.set('backgroundImage', bgImage);
+
+        // Configure background image as non-interactive regular object
+        // This ensures it participates in the viewport transform (setZoom)
+        bgImage.set({
+            left: 0,
+            top: 0,
+            scaleX: 1,
+            scaleY: 1,
+            selectable: false,
+            evented: false,
+            excludeFromExport: false,
+            isBackgroundLayer: true
+        });
+        canvas.add(bgImage);
+        canvas.sendObjectToBack(bgImage);
 
         // Create Fabric.js Textbox objects for each placeholder
         for (const placeholder of config.placeholders) {

@@ -6,6 +6,13 @@ const ExportManager = {
     /**
      * Export the canvas as a high-resolution PNG and trigger download.
      * Deselects all objects before export for a clean output.
+     *
+     * Note: No zoom reset is needed before export. Fabric.js 6's toDataURL()
+     * renders at logical canvas dimensions (1100×1700) ignoring the viewport
+     * transform (zoom/pan). The multiplier scales the logical dimensions directly.
+     * The background layer (a regular canvas object with excludeFromExport: false)
+     * is included automatically since it is in the canvas _objects array.
+     *
      * @param {fabric.Canvas} canvas - The Fabric.js canvas instance
      * @param {object} templateConfig - Template configuration with dimensions
      */

@@ -69,13 +69,13 @@ const ResponsiveManager = {
     },
 
     /**
-     * Recalculate the canvas scale and apply it via CSS transform.
+     * Recalculate the canvas scale and apply it via Fabric.js native zoom.
      * Steps:
      * 1. Get available viewport area (viewport minus toolbar space)
      * 2. Get the canvas natural dimensions
      * 3. Calculate scale = min(availableWidth / canvasWidth, availableHeight / canvasHeight)
      * 4. Clamp to max 1.0 (never upscale)
-     * 5. Apply via CSS transform on the Fabric.js canvas wrapper
+     * 5. Apply via canvas.setZoom() and adjust CSS dimensions
      */
     recalculateLayout() {
         if (!this._canvas || !this._containerElement) return;
@@ -107,13 +107,17 @@ const ResponsiveManager = {
         // Don't clamp below a minimum - just let it scale down as needed
         this._scale = scale;
 
-        // Apply CSS transform to the Fabric.js-generated canvas wrapper
-        // Fabric.js creates a div with class "canvas-container" inside our #canvas-container
-        const fabricWrapper = this._containerElement.querySelector('.canvas-container');
-        if (fabricWrapper) {
-            fabricWrapper.style.transform = `scale(${scale})`;
-            fabricWrapper.style.transformOrigin = 'center center';
-        }
+        // Use Fabric.js native zoom API to scale the canvas.
+        // This updates the viewportTransform so getPointer() correctly maps
+        // visual positions to logical coordinates at all scale factors.
+        this._canvas.setZoom(scale);
+
+        // Set the canvas element CSS dimensions to reflect the scaled size,
+        // without altering logical dimensions used for object positioning and export.
+        this._canvas.setDimensions(
+            { width: canvasWidth * scale, height: canvasHeight * scale },
+            { cssOnly: true }
+        );
     },
 
     /**
