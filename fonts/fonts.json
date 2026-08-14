@@ -2,12 +2,12 @@
     "fonts": [
         {
             "family": "The Serif Hand Black",
-            "file": "fonts/TheSerifHand-Black.woff2",
+            "file": "fonts/TheSerifHand-Black.ttf",
             "weight": "normal"
         },
         {
             "family": "The Serif Hand Extrablack",
-            "file": "fonts/TheSerifHand-Extrablack.woff2",
+            "file": "fonts/TheSerifHand-Extrablack.ttf",
             "weight": "900"
         }
     ]

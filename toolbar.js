@@ -155,8 +155,8 @@ const Toolbar = {
             console.warn('Toolbar: Could not load fonts list', err);
             // Use hardcoded defaults if fonts.json can't be fetched
             fonts = [
-                { family: 'The Serif Hand Black' },
-                { family: 'The Serif Hand Extrablack' }
+                { family: 'The Serif Hand Black', weight: 'normal' },
+                { family: 'The Serif Hand Extrablack', weight: '900' }
             ];
         }
 
@@ -186,16 +186,34 @@ const Toolbar = {
         if (!document.fonts || !fonts.length) return;
 
         try {
-            // Wait for all fonts to finish loading attempts
-            await document.fonts.ready;
-
             const failedFonts = [];
 
             for (const font of fonts) {
                 const family = font.family;
-                // Check if the font is available using the Font Loading API
-                const isLoaded = document.fonts.check(`16px "${family}"`);
-                if (!isLoaded) {
+                const weight = font.weight || 'normal';
+                try {
+                    // Force the browser to load the font by triggering a layout with it.
+                    // document.fonts.load() only works for fonts already in the FontFaceSet,
+                    // which may not include swap fonts that haven't been rendered yet.
+                    // Creating a temporary element forces the font into the set.
+                    const probe = document.createElement('span');
+                    probe.style.fontFamily = `"${family}"`;
+                    probe.style.fontWeight = weight;
+                    probe.style.position = 'absolute';
+                    probe.style.left = '-9999px';
+                    probe.style.visibility = 'hidden';
+                    probe.textContent = 'font probe';
+                    document.body.appendChild(probe);
+
+                    // Now that text is rendered with the font, load() will find it
+                    const loaded = await document.fonts.load(`${weight} 16px "${family}"`);
+                    document.body.removeChild(probe);
+
+                    if (!loaded || loaded.length === 0) {
+                        failedFonts.push(family);
+                    }
+                } catch (err) {
+                    // Font load rejected — treat as unavailable
                     failedFonts.push(family);
                 }
             }
