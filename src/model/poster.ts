@@ -211,7 +211,7 @@ export function defaultEffects(): TextEffects {
   return {
     shadow: { enabled: false, color: "#000000", blur: 8, offsetX: 0, offsetY: 4 },
     outline: { enabled: false, color: "#000000", width: 3 },
-    background: { enabled: false, color: "#000000", padding: 16, radius: 8 },
+    background: { enabled: false, color: "#2B323F", padding: 16, radius: 8 },
   };
 }
 
@@ -242,7 +242,7 @@ export function makeText(size: PosterSize, overrides: Partial<TextObject> = {}):
     lineHeight: 1.15,
     letterSpacing: 0,
     align: "center",
-    color: "#ffffff",
+    color: "#F8EED1",
     italic: false,
     uppercase: false,
     effects: {
@@ -264,7 +264,7 @@ export function createProject(name = "Untitled poster"): Project {
     createdAt: now,
     updatedAt: now,
     size,
-    backgroundColor: "#1b1b1f",
+    backgroundColor: "#2B323F",
     image: null,
     template: null,
     texts: [],

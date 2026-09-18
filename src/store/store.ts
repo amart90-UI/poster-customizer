@@ -239,10 +239,12 @@ export const useEditor = create<EditorState>((set, get) => {
       commit((d) => {
         const template = getTemplate(templateId);
         d.template = ensureTemplate(d.template, templateId);
+        // Auto-link only fills in the OTHER side when it is currently empty, so
+        // the first pick establishes the matching pair but later changes don't
+        // drag the other side along (allowing mismatched combos).
+        const shouldLink = figures && template && d.template.logo == null;
         d.template.figures = figures;
-        // Linked by default: choosing a figure switches the logo to its match.
-        // The user can still change the logo afterward without affecting this.
-        if (figures && template) {
+        if (shouldLink) {
           const linked = template.figureToLogo[figures as FigureId];
           if (linked) d.template.logo = linked;
         }
@@ -252,9 +254,9 @@ export const useEditor = create<EditorState>((set, get) => {
       commit((d) => {
         const template = getTemplate(templateId);
         d.template = ensureTemplate(d.template, templateId);
+        const shouldLink = logo && template && d.template.figures == null;
         d.template.logo = logo;
-        // Linked by default: choosing a logo switches the figures to its match.
-        if (logo && template) {
+        if (shouldLink) {
           const linked = template.logoToFigure[logo as LogoId];
           if (linked) d.template.figures = linked;
         }
