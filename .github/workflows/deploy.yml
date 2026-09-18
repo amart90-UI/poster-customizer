@@ -32,11 +32,10 @@ jobs:
         run: npm ci
 
       - name: Build
-        # GitHub Pages serves the site under /<repo-name>/, so the Vite base
-        # must match. `github.event.repository.name` resolves the repo name.
+        # The Vite config uses a relative base ("./"), so the built site works
+        # under GitHub Pages' /<repo-name>/ subpath without needing to inject
+        # the repo name here.
         run: npm run build
-        env:
-          VITE_BASE: /${{ github.event.repository.name }}/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

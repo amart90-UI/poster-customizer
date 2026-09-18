@@ -2,10 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 
-// The site is deployed to GitHub Pages under /<repo>/.
-// Set VITE_BASE at build time (the deploy workflow does this automatically).
-// Locally it falls back to "/" so `npm run dev` works without config.
-const base = process.env.VITE_BASE ?? "/";
+// Use a RELATIVE base ("./") by default so the built asset URLs work no matter
+// what subpath the site is served from — GitHub Pages serves under
+// /<repo-name>/, and a relative base resolves correctly there without needing
+// to know the repo name at build time. `npm run dev` still works with "./".
+// VITE_BASE can still override this if an absolute base is ever needed.
+const base = process.env.VITE_BASE ?? "./";
 
 export default defineConfig({
   base,
