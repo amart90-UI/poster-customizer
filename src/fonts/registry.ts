@@ -23,6 +23,15 @@ export interface FontDef {
  * A small, curated set. Focused, not overwhelming. Add entries here to expand.
  */
 export const FONTS: FontDef[] = [
+  // Preferred defaults, in order. The first entry is the default for new text.
+  { family: "BioRhyme", weights: [400, 700, 800], category: "serif" },
+  { family: "Averia Libre", weights: [300, 400, 700], italic: true, category: "display" },
+  { family: "Maiden Orange", weights: [400], category: "display" },
+  { family: "Rye", weights: [400], category: "display" },
+  { family: "Smokum", weights: [400], category: "display" },
+  { family: "Lora", weights: [400, 500, 600, 700], italic: true, category: "serif" },
+
+  // Additional families, still available in the picker.
   { family: "Inter", weights: [400, 500, 700, 900], italic: true, category: "sans" },
   { family: "Poppins", weights: [400, 500, 600, 700, 800], italic: true, category: "sans" },
   { family: "Montserrat", weights: [400, 600, 700, 800, 900], italic: true, category: "sans" },
@@ -31,7 +40,6 @@ export const FONTS: FontDef[] = [
   { family: "Anton", weights: [400], category: "display" },
   { family: "Archivo Black", weights: [400], category: "display" },
   { family: "Playfair Display", weights: [400, 600, 700, 900], italic: true, category: "serif" },
-  { family: "Lora", weights: [400, 500, 600, 700], italic: true, category: "serif" },
   { family: "Merriweather", weights: [400, 700, 900], italic: true, category: "serif" },
   { family: "Abril Fatface", weights: [400], category: "display" },
   { family: "Pacifico", weights: [400], category: "handwriting" },
@@ -44,7 +52,7 @@ export const FONT_MAP: Record<string, FontDef> = Object.fromEntries(
 );
 
 /** The default/fallback family; guaranteed to be in the registry. */
-export const DEFAULT_FONT = "Inter";
+export const DEFAULT_FONT = "BioRhyme";
 
 function familyToParam(family: string): string {
   return family.replace(/ /g, "+");

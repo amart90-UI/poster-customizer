@@ -236,7 +236,7 @@ export function makeText(size: PosterSize, overrides: Partial<TextObject> = {}):
     x,
     y,
     width: boxWidth,
-    fontFamily: "Inter",
+    fontFamily: "BioRhyme",
     fontWeight: 700,
     fontSize,
     lineHeight: 1.15,
