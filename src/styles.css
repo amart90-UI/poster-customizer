@@ -357,8 +357,16 @@ input[type="range"] {
 }
 
 /* ---------- Stage / poster ---------- */
+/* The sizer occupies the scaled on-screen footprint so the flex container can
+   center it correctly. The .stage inside keeps full document pixels. */
+.stage-sizer {
+  position: relative;
+  flex: 0 0 auto;
+}
 .stage {
   position: absolute;
+  top: 0;
+  left: 0;
   transform-origin: top left;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   background: #000;

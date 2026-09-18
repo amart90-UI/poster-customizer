@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { PosterImage, PosterSize, Project, TextObject } from "@/types";
-import { createProject, docDimensions, makeText } from "@/model/poster";
+import { createProject, docDimensions, makeText, reframeTransform } from "@/model/poster";
 
 /**
  * History model
@@ -177,15 +177,21 @@ export const useEditor = create<EditorState>((set, get) => {
 
     setSize: (size) =>
       commit((d) => {
-        d.size = size;
-        // Re-fit the image to the new document if present.
+        // Re-frame the image so the user's framing is preserved as the poster
+        // changes size, only adjusting enough to keep the poster covered.
         if (d.image) {
-          const { width, height } = docDimensions(size);
-          const scale = Math.max(width / d.image.naturalWidth, height / d.image.naturalHeight);
-          d.image.scale = scale;
-          d.image.offsetX = (width - d.image.naturalWidth * scale) / 2;
-          d.image.offsetY = (height - d.image.naturalHeight * scale) / 2;
+          const oldDoc = docDimensions(d.size);
+          const newDoc = docDimensions(size);
+          const t = reframeTransform(
+            d.image,
+            oldDoc.width,
+            oldDoc.height,
+            newDoc.width,
+            newDoc.height,
+          );
+          d.image = { ...d.image, ...t };
         }
+        d.size = size;
       }),
 
     setBackgroundColor: (color) =>

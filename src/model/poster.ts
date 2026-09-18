@@ -80,6 +80,51 @@ export function containTransform(
   };
 }
 
+/**
+ * Re-frame an image transform when the poster document changes size while
+ * preserving the user's framing intent (option A).
+ *
+ * The point of the image currently under the OLD poster center is kept under
+ * the NEW poster center, and the existing zoom is preserved. If the current
+ * scale no longer covers the new poster, it is increased to the minimum that
+ * does (still anchored at the center). Finally offsets are clamped so the image
+ * never leaves a visible gap at any edge.
+ *
+ * This makes size changes gentle and predictable instead of snapping back to a
+ * fresh cover-and-center each time.
+ */
+export function reframeTransform(
+  image: Pick<PosterImage, "naturalWidth" | "naturalHeight" | "scale" | "offsetX" | "offsetY">,
+  oldDocWidth: number,
+  oldDocHeight: number,
+  newDocWidth: number,
+  newDocHeight: number,
+): { scale: number; offsetX: number; offsetY: number } {
+  const { naturalWidth, naturalHeight } = image;
+
+  // The image-space point (in natural pixels) currently at the old center.
+  // doc = offset + natural * scale  ->  natural = (docPoint - offset) / scale
+  const focalNX = (oldDocWidth / 2 - image.offsetX) / image.scale;
+  const focalNY = (oldDocHeight / 2 - image.offsetY) / image.scale;
+
+  // Keep the current zoom, but never below what covers the new poster.
+  const minScale = Math.max(newDocWidth / naturalWidth, newDocHeight / naturalHeight);
+  const scale = Math.max(image.scale, minScale);
+
+  // Place that focal point at the new center.
+  let offsetX = newDocWidth / 2 - focalNX * scale;
+  let offsetY = newDocHeight / 2 - focalNY * scale;
+
+  // Clamp so the drawn image always covers the poster (no background gap).
+  const drawnW = naturalWidth * scale;
+  const drawnH = naturalHeight * scale;
+  // Left edge must be <= 0 and right edge (offset + drawn) must be >= docWidth.
+  offsetX = Math.min(0, Math.max(offsetX, newDocWidth - drawnW));
+  offsetY = Math.min(0, Math.max(offsetY, newDocHeight - drawnH));
+
+  return { scale, offsetX, offsetY };
+}
+
 export function makeImage(
   src: string,
   naturalWidth: number,

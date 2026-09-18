@@ -37,10 +37,20 @@ export function Stage() {
     return Math.min(availW / doc.width, availH / doc.height, 1.5);
   }, [wrapSize, doc.width, doc.height]);
 
+  // The sizer takes up the SCALED on-screen size so the flex container centers
+  // it correctly. The inner .stage keeps full document pixel dimensions and is
+  // scaled from its top-left corner to fit exactly inside the sizer. (Scaling
+  // the .stage directly would leave its layout box at full document size, so a
+  // large poster's box would extend far past the viewport and get mis-centered.)
+  const sizerStyle: React.CSSProperties = {
+    width: doc.width * scale,
+    height: doc.height * scale,
+  };
   const stageStyle: React.CSSProperties = {
     width: doc.width,
     height: doc.height,
     transform: `scale(${scale})`,
+    transformOrigin: "top left",
   };
 
   const [drag, setDrag] = useState<DragState | null>(null);
@@ -176,11 +186,12 @@ export function Stage() {
 
   return (
     <div className="stage-wrap" ref={wrapRef}>
-      <div
-        className="stage"
-        style={stageStyle}
-        onPointerDown={onStageBackgroundDown}
-      >
+      <div className="stage-sizer" style={sizerStyle}>
+        <div
+          className="stage"
+          style={stageStyle}
+          onPointerDown={onStageBackgroundDown}
+        >
         {/* Background */}
         <div className="poster-bg" style={{ background: project.backgroundColor }}>
           {project.image && (
@@ -221,6 +232,7 @@ export function Stage() {
             <div key={`h${i}`} className="guide h" style={{ top: g.pos }} />
           ),
         )}
+        </div>
       </div>
     </div>
   );
