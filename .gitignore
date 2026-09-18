@@ -1,3 +1,21 @@
-*.pptx
-node_modules/*
-.kiro/*
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Local env files
+*.local
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+*.log
+logs
+*.tsbuildinfo
+
+# Vite
+.vite

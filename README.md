@@ -1,88 +1,112 @@
-# Poster Customizer
+# Poster
 
-A browser-based poster editor for the Hoss Hangmen. Load a template, customize the text (date, venue, details), and export a print-ready PNG.
+A focused, static web app for turning an image into a finished poster with
+precisely controlled typography. Choose an image, add text, style it, position
+it, and export a high-quality file suitable for printing. No backend, no
+account, no server-side processing.
 
-Built with [Fabric.js](http://fabricjs.com/) — no server required. Everything runs client-side.
+## Live use
+
+The app runs entirely in the browser. Your projects autosave to local storage
+and never leave your device.
+
+The intended workflow:
+
+**Choose image → add text → style text → position text → export.**
 
 ## Features
 
-- Template-based editing with background images and pre-positioned text placeholders
-- Add, move, resize, and style text boxes (font family, size, color)
-- Undo/redo with keyboard shortcuts (Ctrl+Z / Ctrl+Y)
-- Auto-save to localStorage so work persists across page reloads
-- Export as high-resolution PNG (≥150 DPI at physical print size)
-- Responsive canvas that adapts to the browser window
-- Custom bundled fonts (The Serif Hand family)
+- Upload a background image that automatically fits the poster (fill or fit).
+- Add, edit, drag, resize, rotate, and delete text objects.
+- Snapping with alignment guides for center and margins; hold **Shift** to
+  disable snapping for free positioning.
+- Keyboard nudging with arrow keys (**Shift** for larger steps).
+- Reliable undo/redo (**Ctrl/Cmd+Z**, **Ctrl/Cmd+Shift+Z**).
+- Typography controls: font (Google Fonts), weight, size, line height, letter
+  spacing, alignment, color, italic, uppercase.
+- Optional effects: drop shadow, outline, and text background panel.
+- Explicit layout commands (Center H/V, Fit width) — nothing moves on its own.
+- Poster size presets (8×10, 11×14, 12×18, 18×24), original image size, and
+  custom dimensions.
+- High-quality PNG/JPEG export rendered from the **original** image at full
+  resolution, with a warning when the source image is too low-resolution for
+  the chosen print size.
+- Projects: create, open, duplicate, import, and export. Project files preserve
+  editable text and layout (not just a flattened image).
 
-## Usage
+## Keyboard shortcuts
 
-1. Open `index.html` in a browser (or serve the project with any static file server).
-2. Select a template from the toolbar.
-3. Click the placeholder text fields to edit event date, venue name, and additional details.
-4. Use **+ Text** to add new text boxes anywhere on the poster.
-5. Adjust font size, typeface, and color from the toolbar.
-6. Click **Export** to download the poster as a PNG.
+| Action | Shortcut |
+| --- | --- |
+| Undo | Ctrl/Cmd + Z |
+| Redo | Ctrl/Cmd + Shift + Z, or Ctrl + Y |
+| Duplicate selection | Ctrl/Cmd + D |
+| Delete selection | Delete / Backspace |
+| Nudge | Arrow keys (Shift = 20px) |
+| Deselect | Escape |
+| Free-move (no snap) | Hold Shift while dragging |
 
-## Running Locally
+## Tech stack
 
-### Prerequisites
+- **React + TypeScript + Vite** — static build, deployable to GitHub Pages.
+- **Zustand** — editor state with a snapshot-based undo/redo history.
+- No backend or external services beyond Google Fonts stylesheets.
 
-- A modern web browser (Chrome, Firefox, Edge, Safari)
-- [Node.js](https://nodejs.org/) (v18+) — only needed if you want to run tests
+## Architecture
 
-### Quick Start (no build step)
+Everything geometric is stored in **document pixels**: the poster's pixel size
+at its export DPI (`widthInches * dpi` by `heightInches * dpi`). Text positions,
+sizes, and the background transform all live in this space, so they are
+independent of the on-screen zoom. The editor renders the document scaled to
+fit the viewport; export renders at 1:1 document pixels, so the preview and the
+exported file match.
 
-The app is plain HTML/JS with no bundler. You can open `index.html` directly, but most browsers block `fetch()` from `file://` URLs. Use any local static server instead:
+Key modules:
 
-```bash
-# Option A: Python (built-in)
-python -m http.server 8000
+- `src/types.ts` — the data model (`Project`, `TextObject`, `PosterImage`).
+- `src/model/poster.ts` — size presets, image-fit transforms, factory defaults.
+- `src/store/store.ts` — Zustand store with undo/redo (gesture coalescing).
+- `src/store/persistence.ts` — local storage autosave + project import/export.
+- `src/render/textLayout.ts` — shared text wrapping/measurement (used by both
+  the preview and the exporter, so they agree on layout).
+- `src/render/drawPoster.ts` — canvas renderer used for export.
+- `src/render/snapping.ts` — snapping + alignment guides.
+- `src/render/export.ts` — full-resolution render + resolution check.
+- `src/fonts/registry.ts` — the font list and on-demand Google Fonts loading.
+- `src/components/*` — the UI (stage, panels, dialogs).
 
-# Option B: Node one-liner
-npx serve .
+## Adding or changing fonts
 
-# Option C: VS Code Live Server extension
-# Right-click index.html → "Open with Live Server"
+Fonts are defined in one place. Edit the `FONTS` array in
+`src/fonts/registry.ts`:
+
+```ts
+export const FONTS: FontDef[] = [
+  { family: "Inter", weights: [400, 500, 700, 900], italic: true, category: "sans" },
+  // Add a Google Font here:
+  { family: "Rubik", weights: [400, 500, 700], italic: true, category: "sans" },
+];
 ```
 
-Then visit `http://localhost:8000` (or whichever port your server reports).
+Use the exact Google Fonts family name. The app requests only the weights you
+list, loads each font on demand, and waits for fonts to finish loading before
+exporting.
 
-### Running Tests
+## Development
 
 ```bash
 npm install
-npm test
+npm run dev      # start the dev server
+npm run build    # type-check and produce the static build in dist/
+npm run preview  # preview the production build locally
 ```
 
-Tests use [Vitest](https://vitest.dev/) with jsdom for DOM simulation.
+## Deployment (GitHub Pages)
 
-## Project Structure
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds the site
+and publishes it to GitHub Pages. The workflow sets Vite's `base` to
+`/<repo-name>/` automatically so asset paths resolve correctly under the Pages
+subpath.
 
-```
-├── index.html              # Entry point
-├── styles.css              # App styles
-├── editor.js               # Main orchestrator (canvas init, event wiring)
-├── toolbar.js              # Toolbar UI and controls
-├── templateManager.js      # Template loading and rendering
-├── exportManager.js        # PNG export logic
-├── historyManager.js       # Undo/redo state stack
-├── persistenceManager.js   # localStorage auto-save/restore
-├── responsiveManager.js    # Canvas responsive scaling
-├── notifications.js        # Toast and modal notifications
-├── fonts/                  # Bundled custom fonts
-├── templates/              # Template assets and configs
-│   ├── index.json          # Template registry
-│   └── hoss-dark/          # "Hoss Hangmen - Dark" template
-└── package.json            # Dev dependencies (test runner only)
-```
-
-## Adding a Template
-
-1. Create a new folder under `templates/` (e.g. `templates/my-template/`).
-2. Add a `template.json` with dimensions, background reference, placeholder definitions, and font declarations (see `templates/hoss-dark/template.json` for the schema).
-3. Add the background image and a thumbnail image to the folder.
-4. Register it in `templates/index.json`.
-
-## License
-
-Private project.
+To enable it once: in the repository settings, set **Pages → Build and
+deployment → Source** to **GitHub Actions**.
