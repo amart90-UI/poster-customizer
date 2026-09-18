@@ -48,7 +48,8 @@ export function useKeyboard() {
       const id = state.selectedIds[0];
 
       if (e.key === "Escape") {
-        state.select(null);
+        if (state.bgEditMode) state.setBgEditMode(false);
+        else state.select(null);
         return;
       }
 

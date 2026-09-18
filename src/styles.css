@@ -373,6 +373,20 @@ input[type="range"] {
   user-select: none;
   touch-action: none;
 }
+/* Background-edit mode: the stage grabs pointer input to pan/zoom the image,
+   and text objects are made inert so they can't be moved by accident. */
+.stage.bg-edit {
+  cursor: grab;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.stage.bg-edit:active {
+  cursor: grabbing;
+}
+.stage.bg-edit .text-object,
+.stage.bg-edit .selection-box {
+  pointer-events: none;
+}
 .stage .poster-bg {
   position: absolute;
   inset: 0;

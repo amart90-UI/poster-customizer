@@ -34,10 +34,13 @@ export interface EditorState {
   selectedIds: string[];
   /** The text object currently being edited inline, if any. */
   editingId: string | null;
+  /** When true, the stage pans/zooms the background image instead of text. */
+  bgEditMode: boolean;
 
   // ---- selection ----
   select: (id: string | null, opts?: { additive?: boolean }) => void;
   setEditing: (id: string | null) => void;
+  setBgEditMode: (on: boolean) => void;
 
   // ---- history ----
   undo: () => void;
@@ -108,6 +111,7 @@ export const useEditor = create<EditorState>((set, get) => {
     coalesceKey: null,
     selectedIds: [],
     editingId: null,
+    bgEditMode: false,
 
     select: (id, opts) =>
       set((s) => {
@@ -124,6 +128,10 @@ export const useEditor = create<EditorState>((set, get) => {
       }),
 
     setEditing: (id) => set({ editingId: id }),
+
+    // Entering background-edit mode clears any text selection so the two modes
+    // never fight over the same pointer input.
+    setBgEditMode: (on) => set(on ? { bgEditMode: true, selectedIds: [], editingId: null } : { bgEditMode: false }),
 
     undo: () =>
       set((s) => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor } from "@/store/store";
-import { docDimensions } from "@/model/poster";
+import { clampOffset, docDimensions, zoomAtPoint } from "@/model/poster";
 import { useElementSize } from "@/hooks/useElementSize";
 import { layoutText } from "@/render/textLayout";
 import { snapBox, type SnapGuide } from "@/render/snapping";
@@ -14,7 +14,8 @@ type DragState =
   | { kind: "move"; id: string; startX: number; startY: number; objX: number; objY: number }
   | { kind: "resize-e"; id: string; startX: number; objX: number; objW: number }
   | { kind: "resize-w"; id: string; startX: number; objX: number; objW: number }
-  | { kind: "rotate"; id: string; cx: number; cy: number; startAngle: number; objRot: number };
+  | { kind: "rotate"; id: string; cx: number; cy: number; startAngle: number; objRot: number }
+  | { kind: "bg-pan"; startX: number; startY: number; imgX: number; imgY: number };
 
 export function Stage() {
   const project = useEditor((s) => s.project);
@@ -22,7 +23,9 @@ export function Stage() {
   const editingId = useEditor((s) => s.editingId);
   const select = useEditor((s) => s.select);
   const updateText = useEditor((s) => s.updateText);
+  const updateImage = useEditor((s) => s.updateImage);
   const endCoalesce = useEditor((s) => s.endCoalesce);
+  const bgEditMode = useEditor((s) => s.bgEditMode);
 
   const { ref: wrapRef, size: wrapSize } = useElementSize<HTMLDivElement>();
   const doc = docDimensions(project.size);
@@ -57,6 +60,7 @@ export function Stage() {
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
+  const stageRef = useRef<HTMLDivElement | null>(null);
 
   // Precompute layouts (heights) for text objects.
   const layouts = useMemo(() => {
@@ -88,6 +92,26 @@ export function Stage() {
       const d = dragRef.current;
       if (!d) return;
       const p = clientToDoc(e.clientX, e.clientY);
+
+      // Background pan is independent of any text object; handle it first.
+      if (d.kind === "bg-pan") {
+        const img = project.image;
+        if (!img) return;
+        const nx = d.imgX + (p.x - d.startX);
+        const ny = d.imgY + (p.y - d.startY);
+        const clamped = clampOffset(
+          img.naturalWidth,
+          img.naturalHeight,
+          img.scale,
+          nx,
+          ny,
+          doc.width,
+          doc.height,
+        );
+        updateImage({ offsetX: clamped.offsetX, offsetY: clamped.offsetY }, "bg-pan");
+        return;
+      }
+
       const t = project.texts.find((x) => x.id === d.id);
       if (!t) return;
       const layout = layouts.get(d.id);
@@ -146,7 +170,7 @@ export function Stage() {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  }, [drag, clientToDoc, project.texts, layouts, doc.width, doc.height, scale, margin, updateText, endCoalesce]);
+  }, [drag, clientToDoc, project.texts, project.image, layouts, doc.width, doc.height, scale, margin, updateText, updateImage, endCoalesce]);
 
   const startMove = (e: React.PointerEvent, t: TextObject) => {
     if (editingId === t.id) return; // don't drag while editing text
@@ -180,15 +204,59 @@ export function Stage() {
   };
 
   const onStageBackgroundDown = (e: React.PointerEvent) => {
-    // Clicking empty stage clears selection.
+    if (bgEditMode) {
+      // In background-edit mode, dragging anywhere pans the image.
+      if (!project.image) return;
+      e.preventDefault();
+      const p = clientToDoc(e.clientX, e.clientY);
+      setDrag({
+        kind: "bg-pan",
+        startX: p.x,
+        startY: p.y,
+        imgX: project.image.offsetX,
+        imgY: project.image.offsetY,
+      });
+      return;
+    }
+    // Otherwise, clicking empty stage clears selection.
     if (e.target === e.currentTarget) select(null);
   };
+
+  // Wheel zoom in background-edit mode, centered on the cursor. Attached as a
+  // non-passive listener so we can preventDefault (React binds wheel passively).
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || !bgEditMode) return;
+
+    let endTimer: number | null = null;
+    const onWheel = (e: WheelEvent) => {
+      const img = useEditor.getState().project.image;
+      if (!img) return;
+      e.preventDefault();
+      const p = clientToDoc(e.clientX, e.clientY);
+      // Scroll up (negative deltaY) zooms in; smooth exponential response.
+      const factor = Math.exp(-e.deltaY * 0.0015);
+      const t = zoomAtPoint(img, img.scale * factor, p.x, p.y, doc.width, doc.height);
+      updateImage(t, "bg-zoom");
+      // End the coalesce run once scrolling pauses, so each zoom "session" is a
+      // single undo step.
+      if (endTimer) window.clearTimeout(endTimer);
+      endTimer = window.setTimeout(() => useEditor.getState().endCoalesce(), 250);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      if (endTimer) window.clearTimeout(endTimer);
+    };
+  }, [bgEditMode, clientToDoc, doc.width, doc.height, updateImage]);
 
   return (
     <div className="stage-wrap" ref={wrapRef}>
       <div className="stage-sizer" style={sizerStyle}>
         <div
-          className="stage"
+          className={`stage${bgEditMode ? " bg-edit" : ""}`}
+          ref={stageRef}
           style={stageStyle}
           onPointerDown={onStageBackgroundDown}
         >

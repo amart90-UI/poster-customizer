@@ -17,6 +17,9 @@ The intended workflow:
 ## Features
 
 - Upload a background image that automatically fits the poster (fill or fit).
+- Adjust the background directly on the poster: toggle "Adjust background on
+  poster", then drag to reposition and scroll to zoom toward the cursor. The
+  image always stays clamped so it fully covers the frame.
 - Add, edit, drag, resize, rotate, and delete text objects.
 - Snapping with alignment guides for center and margins; hold **Shift** to
   disable snapping for free positioning.

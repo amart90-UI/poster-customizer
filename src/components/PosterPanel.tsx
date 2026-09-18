@@ -21,6 +21,8 @@ export function PosterPanel() {
   const updateImage = useEditor((s) => s.updateImage);
   const setBackgroundColor = useEditor((s) => s.setBackgroundColor);
   const endCoalesce = useEditor((s) => s.endCoalesce);
+  const bgEditMode = useEditor((s) => s.bgEditMode);
+  const setBgEditMode = useEditor((s) => s.setBgEditMode);
   const push = useToasts((s) => s.push);
 
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -146,8 +148,30 @@ export function PosterPanel() {
             <div className="row wrap" style={{ marginTop: 10 }}>
               <button className="btn" onClick={() => refit("cover")}>Fill</button>
               <button className="btn" onClick={() => refit("contain")}>Fit</button>
-              <button className="btn danger" onClick={() => setImage(null)}>Remove</button>
+              <button
+                className="btn danger"
+                onClick={() => {
+                  setImage(null);
+                  setBgEditMode(false);
+                }}
+              >
+                Remove
+              </button>
             </div>
+
+            <button
+              className={`btn${bgEditMode ? " primary" : ""}`}
+              style={{ width: "100%", marginTop: 10 }}
+              onClick={() => setBgEditMode(!bgEditMode)}
+            >
+              {bgEditMode ? "Done adjusting" : "Adjust background on poster"}
+            </button>
+            {bgEditMode && (
+              <p className="hint" style={{ marginTop: 8 }}>
+                Drag on the poster to reposition. Scroll to zoom toward the
+                cursor. Click "Done adjusting" when finished.
+              </p>
+            )}
 
             <Slider
               label="Image zoom"

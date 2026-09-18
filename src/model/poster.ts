@@ -125,6 +125,77 @@ export function reframeTransform(
   return { scale, offsetX, offsetY };
 }
 
+/**
+ * The minimum scale at which the image still fully covers the poster. Used to
+ * stop the user from zooming out so far that a background gap appears.
+ */
+export function minCoverScale(
+  naturalWidth: number,
+  naturalHeight: number,
+  docWidth: number,
+  docHeight: number,
+): number {
+  return Math.max(docWidth / naturalWidth, docHeight / naturalHeight);
+}
+
+/**
+ * Clamp an image offset so the drawn image always covers the poster (no gap at
+ * any edge). Assumes the scale is already >= minCoverScale.
+ */
+export function clampOffset(
+  naturalWidth: number,
+  naturalHeight: number,
+  scale: number,
+  offsetX: number,
+  offsetY: number,
+  docWidth: number,
+  docHeight: number,
+): { offsetX: number; offsetY: number } {
+  const drawnW = naturalWidth * scale;
+  const drawnH = naturalHeight * scale;
+  return {
+    offsetX: Math.min(0, Math.max(offsetX, docWidth - drawnW)),
+    offsetY: Math.min(0, Math.max(offsetY, docHeight - drawnH)),
+  };
+}
+
+/**
+ * Zoom an image transform toward a fixed document-space anchor point (e.g. the
+ * cursor), keeping that anchor visually stationary. The new scale is clamped to
+ * at least cover the poster, and offsets are clamped to avoid gaps.
+ */
+export function zoomAtPoint(
+  image: Pick<PosterImage, "naturalWidth" | "naturalHeight" | "scale" | "offsetX" | "offsetY">,
+  nextScaleRaw: number,
+  anchorDocX: number,
+  anchorDocY: number,
+  docWidth: number,
+  docHeight: number,
+): { scale: number; offsetX: number; offsetY: number } {
+  const min = minCoverScale(image.naturalWidth, image.naturalHeight, docWidth, docHeight);
+  const scale = Math.max(min, Math.min(nextScaleRaw, min * 12));
+
+  // The image-space point currently under the anchor stays under the anchor.
+  const imgX = (anchorDocX - image.offsetX) / image.scale;
+  const imgY = (anchorDocY - image.offsetY) / image.scale;
+  let offsetX = anchorDocX - imgX * scale;
+  let offsetY = anchorDocY - imgY * scale;
+
+  const clamped = clampOffset(
+    image.naturalWidth,
+    image.naturalHeight,
+    scale,
+    offsetX,
+    offsetY,
+    docWidth,
+    docHeight,
+  );
+  offsetX = clamped.offsetX;
+  offsetY = clamped.offsetY;
+
+  return { scale, offsetX, offsetY };
+}
+
 export function makeImage(
   src: string,
   naturalWidth: number,
