@@ -1,21 +1,22 @@
 import type { Project, ProjectFile } from "@/types";
+import { idbDelete, idbGet, idbPut } from "@/store/idb";
 
 /**
  * Local persistence.
  *
- * Projects live in localStorage under a per-project key, plus an index of
- * metadata for the project list. An "active project" pointer lets us restore
- * exactly what the user was working on after a refresh. Everything is local:
- * no account, no server.
+ * Full projects (which embed the background image as a data URL and can be
+ * several megabytes) are stored in IndexedDB, whose quota is large enough for
+ * real images. A small metadata index and the "active project" pointer stay in
+ * localStorage: they're tiny, and synchronous access keeps startup simple.
  *
- * localStorage is synchronous and size-limited (~5MB). Since projects embed the
- * image as a data URL, a very large image could exceed the quota; writes are
- * wrapped so a quota failure surfaces to the UI instead of throwing silently.
+ * Everything is local — no account, no server.
  */
 
 const KEY_INDEX = "poster:index";
 const KEY_ACTIVE = "poster:active";
-const KEY_PROJECT = (id: string) => `poster:project:${id}`;
+const KEY_MIGRATED = "poster:migrated-to-idb";
+/** Legacy localStorage key for full projects (pre-IndexedDB). */
+const LEGACY_KEY_PROJECT = (id: string) => `poster:project:${id}`;
 
 export interface ProjectMeta {
   id: string;
@@ -23,6 +24,8 @@ export interface ProjectMeta {
   updatedAt: number;
   createdAt: number;
 }
+
+// ---------- metadata index (localStorage) ----------
 
 function readIndex(): ProjectMeta[] {
   try {
@@ -52,25 +55,46 @@ export function setActiveProjectId(id: string | null) {
   else localStorage.removeItem(KEY_ACTIVE);
 }
 
-export function loadProjectById(id: string): Project | null {
-  try {
-    const raw = localStorage.getItem(KEY_PROJECT(id));
-    if (!raw) return null;
-    return JSON.parse(raw) as Project;
-  } catch {
-    return null;
-  }
-}
+// ---------- full projects (IndexedDB) ----------
 
 export class QuotaError extends Error {}
 
-/** Persist a project and update the index. Throws QuotaError if storage full. */
-export function saveProject(project: Project): void {
+function isQuota(err: unknown): boolean {
+  return (
+    err instanceof DOMException &&
+    (err.name === "QuotaExceededError" ||
+      err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+      err.code === 22)
+  );
+}
+
+export async function loadProjectById(id: string): Promise<Project | null> {
   try {
-    localStorage.setItem(KEY_PROJECT(project.id), JSON.stringify(project));
+    const p = await idbGet<Project>(id);
+    if (p) return p;
+  } catch {
+    // fall through to legacy lookup
+  }
+  // Fallback: a project that hasn't been migrated yet may still be in
+  // localStorage. Read it if present.
+  try {
+    const raw = localStorage.getItem(LEGACY_KEY_PROJECT(id));
+    if (raw) return JSON.parse(raw) as Project;
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Persist a project (IndexedDB) and update the index. Throws QuotaError if full. */
+export async function saveProject(project: Project): Promise<void> {
+  try {
+    await idbPut<Project>(project.id, project);
   } catch (err) {
-    if (err instanceof DOMException && (err.name === "QuotaExceededError" || err.code === 22)) {
-      throw new QuotaError("Local storage is full. Your project could not be saved automatically.");
+    if (isQuota(err)) {
+      throw new QuotaError(
+        "Storage is full. Your project could not be saved. Try a smaller image or remove old projects.",
+      );
     }
     throw err;
   }
@@ -86,11 +110,47 @@ export function saveProject(project: Project): void {
   setActiveProjectId(project.id);
 }
 
-export function deleteProject(id: string): void {
-  localStorage.removeItem(KEY_PROJECT(id));
+export async function deleteProject(id: string): Promise<void> {
+  try {
+    await idbDelete(id);
+  } catch {
+    /* ignore */
+  }
+  // Remove any lingering legacy copy too.
+  try {
+    localStorage.removeItem(LEGACY_KEY_PROJECT(id));
+  } catch {
+    /* ignore */
+  }
   writeIndex(readIndex().filter((m) => m.id !== id));
   if (getActiveProjectId() === id) setActiveProjectId(null);
 }
+
+/**
+ * One-time migration of any projects previously stored in localStorage into
+ * IndexedDB. Safe to call on every startup; it no-ops after the first run.
+ */
+export async function migrateLegacyProjects(): Promise<void> {
+  if (localStorage.getItem(KEY_MIGRATED) === "1") return;
+
+  const index = readIndex();
+  for (const meta of index) {
+    const legacyKey = LEGACY_KEY_PROJECT(meta.id);
+    const raw = localStorage.getItem(legacyKey);
+    if (!raw) continue;
+    try {
+      const project = JSON.parse(raw) as Project;
+      await idbPut<Project>(project.id, project);
+      localStorage.removeItem(legacyKey);
+    } catch {
+      // If a single project fails to migrate, leave it in place and continue.
+    }
+  }
+
+  localStorage.setItem(KEY_MIGRATED, "1");
+}
+
+// ---------- import / export ----------
 
 /** Serialize a project to a downloadable file blob. */
 export function projectToFile(project: Project): Blob {

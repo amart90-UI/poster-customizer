@@ -7,8 +7,8 @@ account, no server-side processing.
 
 ## Live use
 
-The app runs entirely in the browser. Your projects autosave to local storage
-and never leave your device.
+The app runs entirely in the browser. Your projects autosave to the browser's
+IndexedDB storage and never leave your device.
 
 The intended workflow:
 
@@ -66,7 +66,8 @@ Key modules:
 - `src/types.ts` — the data model (`Project`, `TextObject`, `PosterImage`).
 - `src/model/poster.ts` — size presets, image-fit transforms, factory defaults.
 - `src/store/store.ts` — Zustand store with undo/redo (gesture coalescing).
-- `src/store/persistence.ts` — local storage autosave + project import/export.
+- `src/store/idb.ts` — tiny promise-based IndexedDB wrapper.
+- `src/store/persistence.ts` — IndexedDB autosave + project import/export.
 - `src/render/textLayout.ts` — shared text wrapping/measurement (used by both
   the preview and the exporter, so they agree on layout).
 - `src/render/drawPoster.ts` — canvas renderer used for export.

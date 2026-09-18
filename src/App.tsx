@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useEditor } from "@/store/store";
-import { getActiveProjectId, loadProjectById } from "@/store/persistence";
+import {
+  getActiveProjectId,
+  loadProjectById,
+  migrateLegacyProjects,
+} from "@/store/persistence";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -29,13 +33,20 @@ export default function App() {
   useAutosave();
   useKeyboard();
 
-  // Restore the last active project on first load.
+  // Migrate any legacy localStorage projects into IndexedDB, then restore the
+  // last active project. Runs once on first load.
   useEffect(() => {
-    const id = getActiveProjectId();
-    if (id) {
-      const p = loadProjectById(id);
-      if (p) loadProject(p);
-    }
+    let cancelled = false;
+    (async () => {
+      await migrateLegacyProjects();
+      const id = getActiveProjectId();
+      if (!id) return;
+      const p = await loadProjectById(id);
+      if (p && !cancelled) loadProject(p);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [loadProject]);
 
   // When a text object is selected, default the mobile panel to the text tab.

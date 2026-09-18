@@ -24,12 +24,12 @@ export function ProjectsDialog({ onClose }: { onClose: () => void }) {
 
   const refresh = () => setProjects(listProjects());
 
-  const open = (id: string) => {
+  const open = async (id: string) => {
     if (id === project.id) {
       onClose();
       return;
     }
-    const p = loadProjectById(id);
+    const p = await loadProjectById(id);
     if (p) {
       loadProject(p);
       push(`Opened "${p.name}".`, "info", 2000);
@@ -44,18 +44,22 @@ export function ProjectsDialog({ onClose }: { onClose: () => void }) {
     onClose();
   };
 
-  const duplicate = (id: string) => {
-    const p = loadProjectById(id);
+  const duplicate = async (id: string) => {
+    const p = await loadProjectById(id);
     if (!p) return;
     const copy = { ...structuredClone(p), id: nanoid(10), name: `${p.name} copy`, createdAt: Date.now(), updatedAt: Date.now() };
-    saveProject(copy);
-    refresh();
-    push("Project duplicated.", "info", 2000);
+    try {
+      await saveProject(copy);
+      refresh();
+      push("Project duplicated.", "info", 2000);
+    } catch (err) {
+      push(err instanceof Error ? err.message : "Could not duplicate project.", "error");
+    }
   };
 
-  const remove = (id: string, name: string) => {
+  const remove = async (id: string, name: string) => {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-    deleteProject(id);
+    await deleteProject(id);
     refresh();
     if (id === project.id) newProject();
   };
@@ -73,7 +77,7 @@ export function ProjectsDialog({ onClose }: { onClose: () => void }) {
       // Give the imported project a fresh id to avoid clobbering an existing one.
       p.id = nanoid(10);
       p.updatedAt = Date.now();
-      saveProject(p);
+      await saveProject(p);
       loadProject(p);
       refresh();
       push(`Imported "${p.name}".`, "info", 2500);
