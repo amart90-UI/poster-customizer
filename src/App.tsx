@@ -12,6 +12,7 @@ import { Topbar } from "@/components/Topbar";
 import { Stage } from "@/components/Stage";
 import { TypographyPanel } from "@/components/TypographyPanel";
 import { PosterPanel } from "@/components/PosterPanel";
+import { TemplatePanel } from "@/components/TemplatePanel";
 import { ExportDialog } from "@/components/ExportDialog";
 import { ProjectsDialog } from "@/components/ProjectsDialog";
 import { Toasts } from "@/components/Toasts";
@@ -22,6 +23,10 @@ export default function App() {
   const loadProject = useEditor((s) => s.loadProject);
   const hasImage = useEditor((s) => s.project.image != null);
   const hasText = useEditor((s) => s.project.texts.length > 0);
+  const hasTemplate = useEditor((s) => {
+    const t = s.project.template;
+    return !!t && (t.background || t.figures != null || t.logo != null);
+  });
   const selectedId = useEditor((s) => s.selectedIds[0]);
   const addText = useEditor((s) => s.addText);
 
@@ -57,7 +62,7 @@ export default function App() {
     }
   }, [selectedId]);
 
-  const showEmptyHint = !hasImage && !hasText;
+  const showEmptyHint = !hasImage && !hasText && !hasTemplate;
 
   return (
     <div className="app">
@@ -139,10 +144,18 @@ function MobilePanel({ tab }: { tab: MobileTab }) {
   const isMobile = useMediaQuery("(max-width: 760px)");
 
   if (isMobile) {
-    return tab === "poster" ? <PosterPanel /> : <TypographyPanel />;
+    return tab === "poster" ? (
+      <>
+        <TemplatePanel />
+        <PosterPanel />
+      </>
+    ) : (
+      <TypographyPanel />
+    );
   }
   return (
     <>
+      <TemplatePanel />
       <TypographyPanel />
       <PosterPanel />
     </>

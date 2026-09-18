@@ -14,6 +14,30 @@ export interface DrawOptions {
   image?: HTMLImageElement | null;
   /** Scale factor applied to the whole drawing (1 = full document pixels). */
   scale?: number;
+  /**
+   * Template layers (background, figures, logo) already loaded as images, in
+   * back-to-front draw order. Each is drawn "contain"-fit and centered so the
+   * artwork keeps its aspect ratio and the layers stay aligned with each other.
+   */
+  templateLayers?: HTMLImageElement[];
+}
+
+/** Draw an image contained (aspect-preserving) and centered within the poster. */
+function drawContained(
+  c: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  docWidth: number,
+  docHeight: number,
+) {
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+  const s = Math.min(docWidth / iw, docHeight / ih);
+  const w = iw * s;
+  const h = ih * s;
+  const x = (docWidth - w) / 2;
+  const y = (docHeight - h) / 2;
+  c.drawImage(img, x, y, w, h);
 }
 
 function roundRect(
@@ -153,6 +177,16 @@ export function drawPoster(
   // Background color.
   c.fillStyle = project.backgroundColor;
   c.fillRect(0, 0, width, height);
+
+  // Template layers (scenery / figures / logo), contained and centered.
+  if (opts.templateLayers && opts.templateLayers.length) {
+    c.save();
+    c.beginPath();
+    c.rect(0, 0, width, height);
+    c.clip();
+    for (const layer of opts.templateLayers) drawContained(c, layer, width, height);
+    c.restore();
+  }
 
   // Background image (clipped to the poster).
   if (project.image && opts.image) {

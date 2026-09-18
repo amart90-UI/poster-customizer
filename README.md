@@ -16,6 +16,10 @@ The intended workflow:
 
 ## Features
 
+- Built-in poster templates: a shared background plus swappable figure and
+  logo layers, composited under your text (and rendered at full resolution on
+  export). Figures and logos are linked by default but can be mixed or turned
+  off independently.
 - Upload a background image that automatically fits the poster (fill or fit).
 - Adjust the background directly on the poster: toggle "Adjust background on
   poster", then drag to reposition and scroll to zoom toward the cursor. The
@@ -77,6 +81,7 @@ Key modules:
 - `src/render/snapping.ts` — snapping + alignment guides.
 - `src/render/export.ts` — full-resolution render + resolution check.
 - `src/fonts/registry.ts` — the font list and on-demand Google Fonts loading.
+- `src/templates/registry.ts` — poster templates and their layer assets.
 - `src/components/*` — the UI (stage, panels, dialogs).
 
 ## Adding or changing fonts
@@ -95,6 +100,21 @@ export const FONTS: FontDef[] = [
 Use the exact Google Fonts family name. The app requests only the weights you
 list, loads each font on demand, and waits for fonts to finish loading before
 exporting.
+
+## Adding or changing templates
+
+Templates live in `src/templates/registry.ts`. A template references a shared
+background plus layer options (figures, logo). To add a template:
+
+1. Drop the layer SVGs (or PNGs) into `src/assets/templates/<your-template>/`.
+   Author every layer on the **same artboard** (same width/height) so the
+   layers line up when stacked; layers are drawn aspect-preserved and centered.
+2. Import the assets with Vite's `?url` suffix and add a `PosterTemplate` entry
+   to `TEMPLATES`, describing the background, the figure/logo options, and the
+   `figureToLogo` / `logoToFigure` link maps used for the "linked by default"
+   behavior.
+
+The renderer and UI pick up new templates automatically.
 
 ## Development
 

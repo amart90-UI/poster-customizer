@@ -5,6 +5,7 @@ import { useElementSize } from "@/hooks/useElementSize";
 import { layoutText } from "@/render/textLayout";
 import { snapBox, type SnapGuide } from "@/render/snapping";
 import { TextObjectView } from "@/components/TextObjectView";
+import { resolveTemplateLayerUrls } from "@/templates/registry";
 import type { TextObject } from "@/types";
 
 /** Margin (in inches) used for margin snapping/guides. */
@@ -30,6 +31,9 @@ export function Stage() {
   const { ref: wrapRef, size: wrapSize } = useElementSize<HTMLDivElement>();
   const doc = docDimensions(project.size);
   const margin = MARGIN_INCHES * project.size.dpi;
+
+  // Ordered (back-to-front) template layer image URLs, if a template is active.
+  const templateLayerUrls = resolveTemplateLayerUrls(project.template);
 
   // Fit the document within the viewport with padding.
   const scale = useMemo(() => {
@@ -262,6 +266,16 @@ export function Stage() {
         >
         {/* Background */}
         <div className="poster-bg" style={{ background: project.backgroundColor }}>
+          {/* Template layers: contained + centered, stacked back-to-front. */}
+          {templateLayerUrls.map((url) => (
+            <img
+              key={url}
+              className="template-layer"
+              src={url}
+              alt=""
+              draggable={false}
+            />
+          ))}
           {project.image && (
             <img
               src={project.image.src}

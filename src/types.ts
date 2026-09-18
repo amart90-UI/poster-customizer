@@ -103,6 +103,19 @@ export interface PosterSize {
   dpi: number;
 }
 
+/**
+ * Selected template layers. Each field is null when that layer is off.
+ * `templateId` names which template these ids belong to.
+ */
+export interface TemplateState {
+  templateId: string;
+  background: boolean;
+  /** Figures option id (e.g. "1" | "2" | "3") or null for none. */
+  figures: string | null;
+  /** Logo option id (e.g. "hoss" | "hangman" | "hangmen") or null for none. */
+  logo: string | null;
+}
+
 /** A complete, self-contained project. */
 export interface Project {
   id: string;
@@ -114,6 +127,8 @@ export interface Project {
   /** Solid background color shown when there is no image (or behind it). */
   backgroundColor: string;
   image: PosterImage | null;
+  /** Optional template layers composited under the text. */
+  template: TemplateState | null;
 
   texts: TextObject[];
 }

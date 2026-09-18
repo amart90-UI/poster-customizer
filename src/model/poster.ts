@@ -266,6 +266,7 @@ export function createProject(name = "Untitled poster"): Project {
     size,
     backgroundColor: "#1b1b1f",
     image: null,
+    template: null,
     texts: [],
   };
 }

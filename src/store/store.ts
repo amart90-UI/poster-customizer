@@ -1,6 +1,15 @@
 import { create } from "zustand";
-import type { PosterImage, PosterSize, Project, TextObject } from "@/types";
+import type { PosterImage, PosterSize, Project, TemplateState, TextObject } from "@/types";
 import { createProject, docDimensions, makeText, reframeTransform } from "@/model/poster";
+import { getTemplate, type FigureId, type LogoId } from "@/templates/registry";
+
+/** Create or reuse a template state object for the given template id. */
+function ensureTemplate(current: TemplateState | null, templateId: string): TemplateState {
+  if (current && current.templateId === templateId) return current;
+  // Switching templates (or first use) starts from a clean, all-on-background
+  // state so the user immediately sees the scenery.
+  return { templateId, background: true, figures: null, logo: null };
+}
 
 /**
  * History model
@@ -57,6 +66,11 @@ export interface EditorState {
   setBackgroundColor: (color: string) => void;
   setImage: (image: PosterImage | null) => void;
   updateImage: (patch: Partial<PosterImage>, coalesce?: string) => void;
+
+  // ---- template layers ----
+  setTemplateBackground: (templateId: string, on: boolean) => void;
+  setTemplateFigures: (templateId: string, figures: string | null) => void;
+  setTemplateLogo: (templateId: string, logo: string | null) => void;
 
   // ---- text objects ----
   addText: (overrides?: Partial<TextObject>) => string;
@@ -214,6 +228,37 @@ export const useEditor = create<EditorState>((set, get) => {
         },
         { coalesce },
       ),
+
+    setTemplateBackground: (templateId, on) =>
+      commit((d) => {
+        d.template = ensureTemplate(d.template, templateId);
+        d.template.background = on;
+      }),
+
+    setTemplateFigures: (templateId, figures) =>
+      commit((d) => {
+        const template = getTemplate(templateId);
+        d.template = ensureTemplate(d.template, templateId);
+        d.template.figures = figures;
+        // Linked by default: choosing a figure switches the logo to its match.
+        // The user can still change the logo afterward without affecting this.
+        if (figures && template) {
+          const linked = template.figureToLogo[figures as FigureId];
+          if (linked) d.template.logo = linked;
+        }
+      }),
+
+    setTemplateLogo: (templateId, logo) =>
+      commit((d) => {
+        const template = getTemplate(templateId);
+        d.template = ensureTemplate(d.template, templateId);
+        d.template.logo = logo;
+        // Linked by default: choosing a logo switches the figures to its match.
+        if (logo && template) {
+          const linked = template.logoToFigure[logo as LogoId];
+          if (linked) d.template.figures = linked;
+        }
+      }),
 
     addText: (overrides) => {
       const size = get().project.size;

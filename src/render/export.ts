@@ -2,6 +2,7 @@ import type { ExportFormat, Project } from "@/types";
 import { docDimensions } from "@/model/poster";
 import { drawPoster } from "@/render/drawPoster";
 import { ensureFontsForExport } from "@/fonts/registry";
+import { resolveTemplateLayerUrls } from "@/templates/registry";
 
 /** Load an image element from a data URL / URL and await decode. */
 export function loadImage(src: string): Promise<HTMLImageElement> {
@@ -100,6 +101,11 @@ export async function renderPosterToBlob(
 
   const image = project.image ? await loadImage(project.image.src) : null;
 
+  // Load template layer SVGs (if any). Drawn to canvas, SVGs rasterize at the
+  // target draw size, so they stay crisp at full export resolution.
+  const layerUrls = resolveTemplateLayerUrls(project.template);
+  const templateLayers = await Promise.all(layerUrls.map((u) => loadImage(u)));
+
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
@@ -115,7 +121,7 @@ export async function renderPosterToBlob(
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  drawPoster(ctx, project, { image, scale });
+  drawPoster(ctx, project, { image, scale, templateLayers });
 
   const mime = opts.format === "png" ? "image/png" : "image/jpeg";
   const quality = opts.format === "jpeg" ? opts.quality ?? 0.92 : undefined;
