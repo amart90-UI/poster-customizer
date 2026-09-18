@@ -1,7 +1,18 @@
 import { create } from "zustand";
-import type { PosterImage, PosterSize, Project, TemplateState, TextObject } from "@/types";
+import type { Overlay, PosterImage, PosterSize, Project, TemplateState, TextObject } from "@/types";
 import { createProject, docDimensions, makeText, reframeTransform } from "@/model/poster";
 import { getTemplate, type FigureId, type LogoId } from "@/templates/registry";
+
+/**
+ * Fill in fields that may be missing on projects saved by older versions, so
+ * newer rendering code can rely on them. Currently: the overlay scrim.
+ */
+function normalizeProject(project: Project): Project {
+  if (!project.overlay) {
+    return { ...project, overlay: { color: "#2B323F", opacity: 0 } };
+  }
+  return project;
+}
 
 /** Create or reuse a template state object for the given template id. */
 function ensureTemplate(current: TemplateState | null, templateId: string): TemplateState {
@@ -66,6 +77,7 @@ export interface EditorState {
   setBackgroundColor: (color: string) => void;
   setImage: (image: PosterImage | null) => void;
   updateImage: (patch: Partial<PosterImage>, coalesce?: string) => void;
+  setOverlay: (patch: Partial<Overlay>, coalesce?: string) => void;
 
   // ---- template layers ----
   setTemplateBackground: (templateId: string, on: boolean) => void;
@@ -177,7 +189,7 @@ export const useEditor = create<EditorState>((set, get) => {
 
     loadProject: (project) =>
       set({
-        project: clone(project),
+        project: normalizeProject(clone(project)),
         past: [],
         future: [],
         coalesceKey: null,
@@ -228,6 +240,9 @@ export const useEditor = create<EditorState>((set, get) => {
         },
         { coalesce },
       ),
+
+    setOverlay: (patch, coalesce) =>
+      commit((d) => { d.overlay = { ...d.overlay, ...patch }; }, { coalesce }),
 
     setTemplateBackground: (templateId, on) =>
       commit((d) => {

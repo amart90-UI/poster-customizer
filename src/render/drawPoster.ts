@@ -205,6 +205,15 @@ export function drawPoster(
     c.restore();
   }
 
+  // Overlay scrim: fades/darkens everything behind the text for legibility.
+  if (project.overlay && project.overlay.opacity > 0) {
+    c.save();
+    c.globalAlpha = Math.max(0, Math.min(1, project.overlay.opacity));
+    c.fillStyle = project.overlay.color;
+    c.fillRect(0, 0, width, height);
+    c.restore();
+  }
+
   // Text objects, in order (last = front).
   for (const t of project.texts) {
     const layout = layoutText(t);

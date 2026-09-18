@@ -20,6 +20,7 @@ export function PosterPanel() {
   const setImage = useEditor((s) => s.setImage);
   const updateImage = useEditor((s) => s.updateImage);
   const setBackgroundColor = useEditor((s) => s.setBackgroundColor);
+  const setOverlay = useEditor((s) => s.setOverlay);
   const endCoalesce = useEditor((s) => s.endCoalesce);
   const bgEditMode = useEditor((s) => s.bgEditMode);
   const setBgEditMode = useEditor((s) => s.setBgEditMode);
@@ -223,6 +224,31 @@ export function PosterPanel() {
               onCommit={endCoalesce}
             />
             <span className="hint">Background color (shown behind or without an image)</span>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Fade background">
+        <p className="hint" style={{ marginBottom: 10 }}>
+          Lay a colored scrim over the background to help text stand out.
+        </p>
+        <Slider
+          label="Fade amount"
+          value={Math.round(project.overlay.opacity * 100)}
+          min={0}
+          max={100}
+          onChange={(v) => setOverlay({ opacity: v / 100 }, "overlay-opacity")}
+          onCommit={endCoalesce}
+          suffix="%"
+        />
+        <div className="field">
+          <div className="row">
+            <ColorField
+              value={project.overlay.color}
+              onChange={(v) => setOverlay({ color: v }, "overlay-color")}
+              onCommit={endCoalesce}
+            />
+            <span className="hint">Fade color</span>
           </div>
         </div>
       </Section>

@@ -417,6 +417,12 @@ input[type="range"] {
   inset: 0;
   overflow: hidden;
 }
+/* Scrim over the background art, beneath the text objects. */
+.stage .poster-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
 .stage .poster-bg img {
   position: absolute;
   transform-origin: top left;

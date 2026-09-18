@@ -267,6 +267,7 @@ export function createProject(name = "Untitled poster"): Project {
     backgroundColor: "#2B323F",
     image: null,
     template: null,
+    overlay: { color: "#2B323F", opacity: 0 },
     texts: [],
   };
 }

@@ -291,6 +291,17 @@ export function Stage() {
           )}
         </div>
 
+        {/* Overlay scrim over the background, under the text. */}
+        {project.overlay.opacity > 0 && (
+          <div
+            className="poster-overlay"
+            style={{
+              background: project.overlay.color,
+              opacity: project.overlay.opacity,
+            }}
+          />
+        )}
+
         {/* Text objects */}
         {project.texts.map((t) => (
           <TextObjectView

@@ -116,6 +116,16 @@ export interface TemplateState {
   logo: string | null;
 }
 
+/**
+ * A full-canvas scrim drawn over the background (color, template, and image)
+ * but under the text, used to fade/darken busy artwork so text stays legible.
+ */
+export interface Overlay {
+  color: string;
+  /** 0 = fully transparent (no effect), 1 = fully opaque. */
+  opacity: number;
+}
+
 /** A complete, self-contained project. */
 export interface Project {
   id: string;
@@ -129,6 +139,8 @@ export interface Project {
   image: PosterImage | null;
   /** Optional template layers composited under the text. */
   template: TemplateState | null;
+  /** Optional scrim over the background to improve text legibility. */
+  overlay: Overlay;
 
   texts: TextObject[];
 }
